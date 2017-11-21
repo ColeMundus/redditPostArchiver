@@ -8,11 +8,8 @@ import argparse
 import time
 import re
 import os
-import sys
 from requests.exceptions import HTTPError
-from pprint import pprint
 from anytree import Node, RenderTree, LevelOrderIter
-from pprint import pprint
 
 parser = argparse.ArgumentParser()
 parser.add_argument("post", help="The post ID number you would like to download")
@@ -66,7 +63,10 @@ def parsePost(post, postID):
     htmlFile.write(' (<a id="postpermalink" href="' + post['permalink'] + '">Permalink</a>)</em>\n')
     if post['is_self']:
         htmlFile.write('<div class="post">\n')
-        htmlFile.write(snudown.markdown(fixMarkdown(post['selftext'])))
+        try:
+            htmlFile.write(snudown.markdown(fixMarkdown(post['selftext'])))
+        except KeyError as e:
+            htmlFile.write('\n')
         htmlFile.write('</div>\n')
     else:
         htmlFile.write('<div class="post">\n<p>\n')
@@ -121,7 +121,10 @@ def parseComment(comment, postAuthor, comments, isRoot=True):
 def fixMarkdown(markdown):
     return re.sub('\&gt;', '>', str(markdown))
 
-post = requests.get('https://api.pushshift.io/reddit/search/submission/?ids=' + args.post).json()['data'][0]
+try:
+    post = requests.get('https://api.pushshift.io/reddit/search/submission/?ids=' + args.post).json()['data'][0]
+except IndexError as e:
+    print('Post not found')
 htmlFile = open(outputFilePath,'w')
 parsePost(post, args.post)
 htmlFile.close()
